@@ -90,4 +90,9 @@ export const instructions = (request: LLMRequest) => {
   return typeof value === "string" ? value : undefined
 }
 
+export const previousResponseId = (request: LLMRequest) => {
+  const value = options(request)?.previousResponseId
+  return typeof value === "string" ? value : undefined
+}
+
 export * as OpenAIOptions from "./openai-options"

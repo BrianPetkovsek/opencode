@@ -1404,12 +1404,13 @@ export const layer = Layer.effect(
             }
 
             yield* plugin.trigger("experimental.chat.messages.transform", {}, { messages: msgs })
+            const continuation = MessageV2.openAIResponsesContinuation(msgs, model)
 
             const [skills, env, instructions, modelMsgs] = yield* Effect.all([
               sys.skills(agent),
               sys.environment(model),
               instruction.system().pipe(Effect.orDie),
-              MessageV2.toModelMessagesEffect(msgs, model),
+              MessageV2.toModelMessagesEffect(continuation.messages, model),
             ])
             const system = [...env, ...instructions, ...(skills ? [skills] : [])]
             const format = lastUser.format ?? { type: "text" as const }
@@ -1425,6 +1426,11 @@ export const layer = Layer.effect(
               tools,
               model,
               toolChoice: format.type === "json_schema" ? "required" : undefined,
+              providerOptions: continuation.previousResponseId
+                ? {
+                    previousResponseId: continuation.previousResponseId,
+                  }
+                : undefined,
             })
 
             if (structured !== undefined) {
