@@ -1,0 +1,47 @@
+name: Build Custom OpenCode for Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build OpenCode
+        shell: pwsh
+        run: bun run ./packages/opencode/script/build.ts --single
+
+      - name: Find generated executable
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem `
+            -Path "./packages/opencode/dist" `
+            -Filter "opencode.exe" `
+            -File `
+            -Recurse
+
+          if (-not $files) {
+            throw "The build finished without producing opencode.exe."
+          }
+
+          $files | Format-Table FullName, Length, LastWriteTime
+
+      - name: Upload OpenCode
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-opencode-windows
+          path: packages/opencode/dist/**/bin/opencode.exe
+          if-no-files-found: error
+          retention-days: 14
