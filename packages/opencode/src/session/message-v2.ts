@@ -128,6 +128,34 @@ function providerMeta(metadata: Record<string, any> | undefined) {
   return Object.keys(rest).length > 0 ? rest : undefined
 }
 
+const openAIResponseID = (metadata: Record<string, any> | undefined): string | undefined => {
+  const openai = metadata?.openai
+  if (!openai || typeof openai !== "object") return undefined
+  const responseID = (openai as { responseId?: unknown }).responseId
+  return typeof responseID === "string" && responseID.length > 0 ? responseID : undefined
+}
+
+export function openAIResponsesContinuation(input: WithParts[], model: Provider.Model) {
+  if (model.api.npm !== "@ai-sdk/openai") return { messages: input } as const
+
+  for (let i = input.length - 1; i >= 0; i--) {
+    const message = input[i]
+    if (message.info.role !== "assistant") continue
+    const responseID = message.parts.reduceRight<string | undefined>((found, part) => {
+      if (found || part.type !== "step-finish") return found
+      return openAIResponseID(part.metadata)
+    }, undefined)
+    if (!responseID) continue
+    const includeAnchor = message.parts.some((part) => part.type === "tool")
+    const continuation = input.slice(includeAnchor ? i : i + 1)
+    return {
+      messages: continuation.length > 0 ? continuation : input.slice(i),
+      previousResponseId: responseID,
+    } as const
+  }
+  return { messages: input } as const
+}
+
 export const toModelMessagesEffect = Effect.fnUntraced(function* (
   input: WithParts[],
   model: Provider.Model,

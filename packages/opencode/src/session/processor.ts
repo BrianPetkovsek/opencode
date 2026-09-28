@@ -447,6 +447,7 @@ const layer = Layer.effect(
               id: PartID.ascending(),
               reason: value.reason,
               snapshot: completedSnapshot,
+              metadata: value.providerMetadata,
               messageID: ctx.assistantMessage.id,
               sessionID: ctx.assistantMessage.sessionID,
               type: "step-finish",

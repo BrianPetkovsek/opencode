@@ -131,6 +131,7 @@ const OpenAIResponsesCoreFields = {
   tool_choice: Schema.optional(OpenAIResponsesToolChoice),
   store: Schema.optional(Schema.Boolean),
   service_tier: Schema.optional(OpenAIOptions.OpenAIServiceTier),
+  previous_response_id: Schema.optional(Schema.String),
   prompt_cache_key: Schema.optional(Schema.String),
   include: optionalArray(OpenAIOptions.OpenAIResponseIncludable),
   reasoning: Schema.optional(
@@ -464,9 +465,11 @@ const lowerOptions = Effect.fn("OpenAIResponses.lowerOptions")(function* (reques
   const verbosity = OpenAIOptions.textVerbosity(request)
   const instructions = OpenAIOptions.instructions(request)
   const serviceTier = OpenAIOptions.serviceTier(request)
+  const previousResponseID = OpenAIOptions.previousResponseId(request)
   return {
     ...(instructions ? { instructions } : {}),
     ...(store !== undefined ? { store } : {}),
+    ...(previousResponseID ? { previous_response_id: previousResponseID } : {}),
     ...(promptCacheKey ? { prompt_cache_key: promptCacheKey } : {}),
     ...(include ? { include } : {}),
     ...(effort || summary ? { reasoning: { effort, summary } } : {}),

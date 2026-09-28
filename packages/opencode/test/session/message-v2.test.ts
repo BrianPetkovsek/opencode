@@ -1363,6 +1363,104 @@ describe("session.message-v2.toModelMessage", () => {
   })
 })
 
+describe("session.message-v2.openAIResponsesContinuation", () => {
+  test("uses previous response id and only keeps new messages when no tool updates are needed", () => {
+    const input: SessionV1.WithParts[] = [
+      {
+        info: userInfo("msg_user_1"),
+        parts: [{ ...basePart("msg_user_1", "u1"), type: "text", text: "hi" }] as SessionV1.Part[],
+      },
+      {
+        info: assistantInfo("msg_assistant_1", "msg_user_1"),
+        parts: [
+          { ...basePart("msg_assistant_1", "a1"), type: "text", text: "hello" },
+          {
+            ...basePart("msg_assistant_1", "a2"),
+            type: "step-finish",
+            reason: "stop",
+            cost: 0,
+            tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+            metadata: { openai: { responseId: "resp_1" } },
+          },
+        ] as SessionV1.Part[],
+      },
+      {
+        info: userInfo("msg_user_2"),
+        parts: [{ ...basePart("msg_user_2", "u2"), type: "text", text: "next" }] as SessionV1.Part[],
+      },
+    ]
+
+    expect(MessageV2.openAIResponsesContinuation(input, model)).toEqual({
+      previousResponseId: "resp_1",
+      messages: [input[2]],
+    })
+  })
+
+  test("keeps the anchor assistant message when it contains tool updates", () => {
+    const input: SessionV1.WithParts[] = [
+      {
+        info: assistantInfo("msg_assistant_1", "msg_user_1"),
+        parts: [
+          {
+            ...basePart("msg_assistant_1", "a1"),
+            type: "tool",
+            callID: "call_1",
+            tool: "bash",
+            state: {
+              status: "completed",
+              input: { command: "ls" },
+              output: "ok",
+              title: "Bash",
+              metadata: {},
+              time: { start: 0, end: 1 },
+            },
+          },
+          {
+            ...basePart("msg_assistant_1", "a2"),
+            type: "step-finish",
+            reason: "tool-calls",
+            cost: 0,
+            tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+            metadata: { openai: { responseId: "resp_2" } },
+          },
+        ] as SessionV1.Part[],
+      },
+      {
+        info: userInfo("msg_user_2"),
+        parts: [{ ...basePart("msg_user_2", "u2"), type: "text", text: "continue" }] as SessionV1.Part[],
+      },
+    ]
+
+    const result = MessageV2.openAIResponsesContinuation(input, model)
+    expect(result.previousResponseId).toBe("resp_2")
+    expect(result.messages).toEqual(input)
+  })
+
+  test("does not apply continuation slicing for non-openai providers", () => {
+    const nonOpenAIModel: Provider.Model = {
+      ...model,
+      api: { ...model.api, npm: "@ai-sdk/openai-compatible" },
+    }
+    const input: SessionV1.WithParts[] = [
+      {
+        info: assistantInfo("msg_assistant_1", "msg_user_1"),
+        parts: [
+          {
+            ...basePart("msg_assistant_1", "a1"),
+            type: "step-finish",
+            reason: "stop",
+            cost: 0,
+            tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+            metadata: { openai: { responseId: "resp_ignore" } },
+          },
+        ] as SessionV1.Part[],
+      },
+    ]
+
+    expect(MessageV2.openAIResponsesContinuation(input, nonOpenAIModel)).toEqual({ messages: input })
+  })
+})
+
 describe("session.message-v2.fromError", () => {
   test("serializes context_length_exceeded as ContextOverflowError", () => {
     const input = {

@@ -79,6 +79,19 @@ describe("OpenAI Responses route", () => {
     }),
   )
 
+  it.effect("forwards previous response id as previous_response_id", () =>
+    Effect.gen(function* () {
+      const prepared = yield* LLMClient.prepare(
+        LLM.updateRequest(request, {
+          providerOptions: { openai: { previousResponseId: "resp_prev_123" } },
+        }),
+      )
+
+      expect(prepared.body).toMatchObject({ previous_response_id: "resp_prev_123" })
+      expect(prepared.body).not.toHaveProperty("previousResponseId")
+    }),
+  )
+
   it.effect("flattens top-level object unions in function schemas", () =>
     Effect.gen(function* () {
       const prepared = yield* LLMClient.prepare<OpenAIResponses.OpenAIResponsesBody>(
