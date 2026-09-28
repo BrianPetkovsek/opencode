@@ -1,49 +1,21 @@
 export * as SessionV1 from "./session"
 
-import { Schema } from "effect"
-import { NonNegativeInt } from "../schema"
+import { Effect, Schema, Types } from "effect"
+import { EventV2 } from "../event"
+import { ModelV2 } from "../model"
+import { PermissionV1 } from "./permission"
+import { ProjectV2 } from "../project"
+import { ProviderV2 } from "../provider"
+import { NonNegativeInt, optional } from "../schema"
+import { SessionSchema } from "../session/schema"
 import { NamedError } from "../util/error"
+import { WorkspaceV2 } from "../workspace"
+import { MessageID, PartID } from "@opencode-ai/schema/session-v1"
 
-export {
-  AgentPart,
-  AgentPartInput,
-  Assistant,
-  CompactionPart,
-  Event,
-  FilePart,
-  FilePartInput,
-  FilePartSource,
-  FileSource,
-  Format,
-  Info,
-  MessageID,
-  OutputFormatJsonSchema,
-  OutputFormatText,
-  Part,
-  PartID,
-  PatchPart,
-  Range,
-  ReasoningPart,
-  ResourceSource,
-  RetryPart,
-  SessionInfo,
-  SnapshotPart,
-  StepFinishPart,
-  StepStartPart,
-  SubtaskPart,
-  SubtaskPartInput,
-  SymbolSource,
-  TextPart,
-  TextPartInput,
-  ToolPart,
-  ToolState,
-  ToolStateCompleted,
-  ToolStateError,
-  ToolStatePending,
-  ToolStateRunning,
-  User,
-  WithParts,
-} from "@opencode-ai/schema/session-v1"
+export { MessageID, PartID } from "@opencode-ai/schema/session-v1"
+
+const Timestamp = Schema.Finite.check(Schema.isGreaterThanOrEqualTo(0))
+const optionalOmitUndefined = optional
 
 export const OutputLengthError = NamedError.create("MessageOutputLengthError", {})
 export const AuthError = NamedError.create("ProviderAuthError", { providerID: Schema.String, message: Schema.String })
