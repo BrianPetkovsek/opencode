@@ -264,6 +264,7 @@ export default defineConfig({
             "mcp-servers",
             "acp",
             "skills",
+            "references",
             "custom-tools",
           ],
         },
@@ -295,9 +296,11 @@ export default defineConfig({
       ],
       components: {
         Hero: "./src/components/Hero.astro",
+        PageFrame: "./src/components/PageFrame.astro",
         Head: "./src/components/Head.astro",
         Header: "./src/components/Header.astro",
         Footer: "./src/components/Footer.astro",
+        LanguageSelect: "./src/components/LanguageSelect.astro",
         SiteTitle: "./src/components/SiteTitle.astro",
       },
       plugins: [
